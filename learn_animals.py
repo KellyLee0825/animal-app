@@ -40,18 +40,51 @@ for species in species_dirs:
             'url': img['download_url']
         })
 
-# 如果有圖片，隨機選一張
-if all_images:
-    selected = random.choice(all_images)
-    image_url = selected['url']
-    species_name = selected['species']
+if not all_images:
+    st.warning("目前找不到任何圖片，請確認 GitHub 的 images 資料夾裡有子資料夾和圖片")
+    st.stop()
 
-    # 顯示圖片
-    img_response = requests.get(image_url)
+# 初始化 session_state，紀錄目前索引和答案顯示狀態
+if 'current_idx' not in st.session_state:
+    st.session_state.current_idx = 0
+if 'show_answer' not in st.session_state:
+    st.session_state.show_answer = False
+
+def show_image(idx):
+    selected = all_images[idx]
+    img_response = requests.get(selected['url'])
     image = Image.open(BytesIO(img_response.content))
     st.image(image, caption="你猜得出來嗎？", use_container_width=True)
 
+    if st.session_state.show_answer:
+        st.success(f"答案是：{selected['species']}")
+
+def next_image():
+    if st.session_state.current_idx < len(all_images) - 1:
+        st.session_state.current_idx += 1
+    st.session_state.show_answer = False
+
+def prev_image():
+    if st.session_state.current_idx > 0:
+        st.session_state.current_idx -= 1
+    st.session_state.show_answer = False
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if st.button("上一張"):
+        prev_image()
+
+with col2:
     if st.button("顯示答案"):
-        st.success(f"答案是：{species_name}")
-else:
-    st.warning("目前找不到任何圖片，請確認 GitHub 的 images 資料夾裡有子資料夾和圖片")
+        st.session_state.show_answer = True
+
+with col3:
+    if st.button("下一張"):
+        next_image()
+
+# 顯示當前圖片
+show_image(st.session_state.current_idx)
+
+# 顯示目前進度
+st.write(f"第 {st.session_state.current_idx + 1} 張，共 {len(all_images)} 張")
