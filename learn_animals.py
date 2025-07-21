@@ -2,8 +2,9 @@ import streamlit as st
 import requests
 import json
 
-# JSON 位置
-JSON_URL = "https://raw.githubusercontent.com/KellyLee0825/animal-app/master/image_list_generator/image_list.json" 
+# JSON 位置 
+JSON_URL = "https://raw.githubusercontent.com/KellyLee0825/animal-app/master/image_list_generator/image_list.json"
+
 
 # 讀取圖片清單
 @st.cache_data
