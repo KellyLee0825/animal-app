@@ -4,7 +4,7 @@ import random
 from PIL import Image
 
 # 設定圖片資料夾根目錄
-IMAGE_ROOT = r"C:\Users\one\Desktop\114年動植物"
+IMAGE_ROOT = r"https://raw.githubusercontent.com/KellyLee0825/animal-app/main/images"
 
 st.title("台灣動植物學習小遊戲 🐢🌿")
 st.write("你知道這是什麼動植物嗎？先猜猜看，再點按鈕看看答案吧！")
