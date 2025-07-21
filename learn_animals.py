@@ -1,19 +1,26 @@
 import streamlit as st
 import requests
-import json
 
-# JSON 位置 
+# JSON 位置
 JSON_URL = "https://raw.githubusercontent.com/KellyLee0825/animal-app/master/image_list_generator/image_list.json"
 
-
-# 讀取圖片清單
 @st.cache_data
 def load_image_data():
     try:
         response = requests.get(JSON_URL)
         response.raise_for_status()
-        return response.json()
-    except:
+        data_list = response.json()  # 讀取成 list
+        # 轉換成 dict：{species: [url1, url2, ...]}
+        data_dict = {}
+        for item in data_list:
+            sp = item['species']
+            url = item['url']
+            if sp not in data_dict:
+                data_dict[sp] = []
+            data_dict[sp].append(url)
+        return data_dict
+    except Exception as e:
+        st.error(f"讀取 JSON 時出錯: {e}")
         return None
 
 data = load_image_data()
@@ -31,6 +38,11 @@ else:
 
     if "index" not in st.session_state:
         st.session_state.index = 0
+
+    # 選擇動植物時，重設圖片索引
+    if st.session_state.get("last_species") != selected_species:
+        st.session_state.index = 0
+        st.session_state.last_species = selected_species
 
     col1, col2, col3 = st.columns([1, 6, 1])
     with col1:
