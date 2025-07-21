@@ -1,89 +1,45 @@
 import streamlit as st
-import requests
 from PIL import Image
+import requests
 from io import BytesIO
-
-import random
-
-# GitHub repo 路徑（images 資料夾 API）
-REPO_API_URL = "https://api.github.com/repos/KellyLee0825/animal-app/contents/images"
+import json
 
 st.title("台灣動植物學習小遊戲 🐢🌿")
 st.write("你知道這是什麼動植物嗎？先猜猜看，再點按鈕看看答案吧！")
 
-def get_github_folder_contents(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        st.error(f"無法讀取 GitHub 資料夾內容，狀態碼: {response.status_code}")
-        return []
+# 讀取 image_list.json
+with open('image_list.json', 'r', encoding='utf-8') as f:
+    all_images = json.load(f)
 
-# 取得 images 資料夾裡的子資料夾（物種名稱）
-contents = get_github_folder_contents(REPO_API_URL)
-species_dirs = [item for item in contents if item['type'] == 'dir']
+# 使用 Session State 記錄目前索引
+if 'index' not in st.session_state:
+    st.session_state.index = 0
 
-all_images = []
+def show_image(index):
+    item = all_images[index]
+    img_url = item['url']
+    species_name = item['species']
 
-# 逐個子資料夾讀取裡面的圖片
-for species in species_dirs:
-    species_name = species['name']
-    species_url = species['url']  # 直接用API回傳的url，包含?ref=master
-    species_contents = get_github_folder_contents(species_url)
+    # 下載圖片並顯示
+    response = requests.get(img_url)
+    img = Image.open(BytesIO(response.content))
+    st.image(img, caption="你猜得出來嗎？", use_container_width=True)
 
-    image_files = [item for item in species_contents
-                   if item['type'] == 'file' and
-                   item['name'].lower().endswith(('.jpg', '.jpeg', '.png'))]
+    if st.button("顯示答案"):
+        st.success(f"答案是：{species_name}")
 
-    for img in image_files:
-        all_images.append({
-            'species': species_name,
-            'url': img['download_url']
-        })
+# 顯示目前圖片
+show_image(st.session_state.index)
 
-if not all_images:
-    st.warning("目前找不到任何圖片，請確認 GitHub 的 images 資料夾裡有子資料夾和圖片")
-    st.stop()
-
-# 初始化 session_state
-if 'current_idx' not in st.session_state:
-    st.session_state.current_idx = 0
-if 'show_answer' not in st.session_state:
-    st.session_state.show_answer = False
-
-def show_image(idx):
-    selected = all_images[idx]
-    img_response = requests.get(selected['url'])
-    image = Image.open(BytesIO(img_response.content))
-    st.image(image, caption="你猜得出來嗎？", use_container_width=True)
-
-    if st.session_state.show_answer:
-        st.success(f"答案是：{selected['species']}")
-
-def next_image():
-    if st.session_state.current_idx < len(all_images) - 1:
-        st.session_state.current_idx += 1
-    st.session_state.show_answer = False
-
-def prev_image():
-    if st.session_state.current_idx > 0:
-        st.session_state.current_idx -= 1
-    st.session_state.show_answer = False
-
-col1, col2, col3 = st.columns(3)
+# 上一張、下一張按鈕
+col1, col2 = st.columns(2)
 
 with col1:
     if st.button("上一張"):
-        prev_image()
+        if st.session_state.index > 0:
+            st.session_state.index -= 1
 
 with col2:
-    if st.button("顯示答案"):
-        st.session_state.show_answer = True
-
-with col3:
     if st.button("下一張"):
-        next_image()
-
-show_image(st.session_state.current_idx)
-
-st.write(f"第 {st.session_state.current_idx + 1} 張，共 {len(all_images)} 張")
+        if st.session_state.index < len(all_images) - 1:
+            st.session_state.index += 1
