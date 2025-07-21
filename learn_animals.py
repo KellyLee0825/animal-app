@@ -48,7 +48,7 @@ else:
         # 下載圖片並顯示
         img_response = requests.get(image_url)
         image = Image.open(BytesIO(img_response.content))
-        st.image(image, caption="你猜得出來嗎？", use_column_width=True)
+        st.image(image, caption="你猜得出來嗎？", use_container_width=True)
 
         if st.button("顯示答案"):
             st.success(f"答案是：{selected_species}")
