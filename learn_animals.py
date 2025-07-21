@@ -37,7 +37,6 @@ else:
             all_images.append((species, url))
 
     if "current_index" not in st.session_state:
-        # 第一次先隨機選一張
         st.session_state.current_index = random.randint(0, len(all_images) - 1)
         st.session_state.show_answer = False
 
@@ -54,7 +53,7 @@ else:
             st.session_state.show_answer = False
 
     species, img_url = all_images[st.session_state.current_index]
-    st.image(img_url, caption=f"猜猜這是什麼？（第 {st.session_state.current_index + 1} 張 / 共 {len(all_images)} 張）", use_container_width=True)
+    st.image(img_url, caption="猜猜這是什麼？", use_container_width=True)
 
     if st.button("顯示答案"):
         st.session_state.show_answer = True
