@@ -18,38 +18,40 @@ def get_github_folder_contents(url):
         st.error("無法讀取 GitHub 資料夾內容")
         return []
 
-# 取得 images 資料夾內容
+# 取得 images 資料夾內容（裡面每一個是物種名稱）
 contents = get_github_folder_contents(REPO_API_URL)
+species_dirs = [item for item in contents if item['type'] == 'dir']
 
-# 找出資料夾名稱（物種名稱）
-species_list = [item['name'] for item in contents if item['type'] == 'dir']
+all_images = []
 
-if not species_list:
-    st.warning("資料夾裡還沒有動植物資料夾，請先放一些進來喔！")
-else:
-    selected_species = st.selectbox("選擇一種動植物", species_list)
+# 每個物種資料夾內，收集圖片
+for species in species_dirs:
+    species_name = species['name']
+    species_url = f"{REPO_API_URL}/{species_name}"
+    species_contents = get_github_folder_contents(species_url)
 
-    # 取得該物種資料夾裡的檔案列表
-    species_api_url = f"{REPO_API_URL}/{selected_species}"
-    species_contents = get_github_folder_contents(species_api_url)
-
-    # 找圖片檔案（只要副檔名是 jpg/png/jpeg）
     image_files = [item for item in species_contents
                    if item['type'] == 'file' and
                    item['name'].lower().endswith(('.jpg', '.jpeg', '.png'))]
 
-    if not image_files:
-        st.warning(f"這個動植物「{selected_species}」目前還沒有圖片")
-    else:
-        # 隨機選一張圖片
-        selected_image = random.choice(image_files)
-        image_url = selected_image['download_url']  # GitHub 直接下載連結
+    for img in image_files:
+        all_images.append({
+            'species': species_name,
+            'url': img['download_url']
+        })
 
-        # 下載圖片並顯示
-        img_response = requests.get(image_url)
-        image = Image.open(BytesIO(img_response.content))
-        st.image(image, caption="你猜得出來嗎？", use_container_width=True)
+# 如果有圖片，隨機選一張
+if all_images:
+    selected = random.choice(all_images)
+    image_url = selected['url']
+    species_name = selected['species']
 
-        if st.button("顯示答案"):
-            st.success(f"答案是：{selected_species}")
+    # 顯示圖片
+    img_response = requests.get(image_url)
+    image = Image.open(BytesIO(img_response.content))
+    st.image(image, caption="你猜得出來嗎？", use_container_width=True)
 
+    if st.button("顯示答案"):
+        st.success(f"答案是：{species_name}")
+else:
+    st.warning("目前找不到任何圖片，請確認 GitHub 的 images 資料夾裡有子資料夾和圖片")
